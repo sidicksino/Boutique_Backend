@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
-const { db } = require('../db');
+const { db } = require('../config/db');
 
 exports.register = async (req, res) => {
   const { email, phone_number, password } = req.body;

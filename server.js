@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 const job = require("./config/cron")
 
-const { db } = require('./db');
+const { db } = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const meRoutes = require('./routes/profileRoutes');
 
