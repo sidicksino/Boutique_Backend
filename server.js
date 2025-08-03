@@ -1,10 +1,13 @@
 const express = require('express');
 const dotenv = require('dotenv');
 dotenv.config();
+const job = require("./config/cron")
 
 const { db } = require('./db');
 const userRoutes = require('./routes/userRoutes');
 const meRoutes = require('./routes/profileRoutes');
+
+if (process.env.NODE_ENV === "production") job.start();
 
 const app = express();
 const port = process.env.PORT || 5000;
