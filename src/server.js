@@ -1,5 +1,6 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const initDB = require("./config/db").initDB; 
 dotenv.config();
 const job = require("./config/cron")
 
@@ -23,6 +24,7 @@ app.get('/dashboard', (req, res) => {
 app.use('/api/user', userRoutes);
 app.use('/api/me', meRoutes);
 
+initDB();
 app.listen(port, () => {
   console.log(`🚀 Server is running on port ${port}`);
 });
