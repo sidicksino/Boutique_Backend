@@ -18,6 +18,25 @@ async function initDB() {
       preferences JSON DEFAULT NULL
     )`;
 
+    await db`CREATE TABLE IF NOT EXISTS categories (
+      category_id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      image_url VARCHAR(255)
+    )`;
+
+    await db`CREATE TABLE IF NOT EXISTS products (
+      product_id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      description TEXT,
+      price DECIMAL(10,2) NOT NULL,
+      discount_percentage INT DEFAULT 0,
+      image_url VARCHAR(255),
+      in_stock BOOLEAN DEFAULT TRUE,
+      is_favorite BOOLEAN DEFAULT FALSE,
+      category_id INT REFERENCES categories(category_id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`;
+
     console.log(" Database initialized successfully");
   } catch (error) {
     console.error(" Error initializing DB:", error);

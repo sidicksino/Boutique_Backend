@@ -2,11 +2,13 @@ const express = require('express');
 const dotenv = require('dotenv');
 const initDB = require("./config/db").initDB; 
 dotenv.config();
-const job = require("./config/cron")
+const job = require("./config/cron");
+const productCategorieRoutes = require('./routes/categoryRoutes');
 
 const { db } = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const meRoutes = require('./routes/profileRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 if (process.env.NODE_ENV === "production") job.start();
 
@@ -23,6 +25,10 @@ app.get('/dashboard', (req, res) => {
 // User routes
 app.use('/api/user', userRoutes);
 app.use('/api/me', meRoutes);
+
+// Produit routes and categories routes
+app.use('/api', productRoutes);
+app.use('/api', productCategorieRoutes)
 
 initDB();
 app.listen(port, () => {
