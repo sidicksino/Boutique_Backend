@@ -37,6 +37,14 @@ async function initDB() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`;
 
+    await db`CREATE TABLE IF NOT EXISTS favorites (
+      favorite_id SERIAL PRIMARY KEY,
+      user_id CHAR(36) REFERENCES users(user_id) ON DELETE CASCADE,
+      product_id INT REFERENCES products(product_id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, product_id)
+    )`;    
+
     console.log(" Database initialized successfully");
   } catch (error) {
     console.error(" Error initializing DB:", error);

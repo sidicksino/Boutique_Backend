@@ -4,6 +4,7 @@ const initDB = require("./config/db").initDB;
 dotenv.config();
 const job = require("./config/cron");
 const productCategorieRoutes = require('./routes/categoryRoutes');
+const favoritesRoutes = require('./routes/favoritesRoutes');
 
 const { db } = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
@@ -29,6 +30,9 @@ app.use('/api/me', meRoutes);
 // Produit routes and categories routes
 app.use('/api', productRoutes);
 app.use('/api', productCategorieRoutes)
+
+// favorites routes
+app.use('/api', favoritesRoutes);
 
 initDB();
 app.listen(port, () => {
