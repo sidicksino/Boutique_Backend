@@ -50,3 +50,24 @@ exports.deleteCategory = async (req, res) => {
   await db`DELETE FROM categories WHERE id = ${id}`;
   res.json({ message: "Category deleted" });
 };
+
+// GET products by category ID
+exports.getProductsByCategoryId = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await db`
+      SELECT * FROM products WHERE category_id = ${id}
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: "No products found for this category" });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error("Erreur getProductsByCategoryId:", error);
+    res.status(500).json({ error: "Erreur serveur lors de la récupération des produits" });
+  }
+};
+
