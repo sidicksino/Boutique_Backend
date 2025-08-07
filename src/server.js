@@ -10,6 +10,8 @@ const { db } = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const meRoutes = require('./routes/profileRoutes');
 const productRoutes = require('./routes/productRoutes');
+const uploadRoutes = require('./routes/uploadRoutes'); // <-- importer
+const path = require('path');
 
 if (process.env.NODE_ENV === "production") job.start();
 
@@ -17,6 +19,9 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(express.json());
+
+// pour servir les fichiers statiques
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Simple route
 app.get('/dashboard', (req, res) => {
@@ -33,6 +38,9 @@ app.use('/api', productCategorieRoutes)
 
 // favorites routes
 app.use('/api', favoritesRoutes);
+
+// uplaod image route
+app.use('/api', uploadRoutes);
 
 initDB();
 app.listen(port, () => {
