@@ -16,31 +16,31 @@ exports.register = async (req, res) => {
 
   try {
     let result = [];
-  
+
     if (email) {
       result = await db`SELECT * FROM users WHERE email = ${email}`;
     } else if (phone_number) {
       result = await db`SELECT * FROM users WHERE phone_number = ${phone_number}`;
     }
-  
+
     if (result.length > 0) {
       return res.status(409).json({ message: 'User already exists' });
     }
-  
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user_id = uuidv4();
-  
+    const provider = email ? 'email' : 'phone';
+
     await db`
-      INSERT INTO users (user_id, email, phone_number, role, password)
-      VALUES (${user_id}, ${email || null}, ${phone_number || null}, 'Client', ${hashedPassword})`;
-  
+      INSERT INTO users (user_id, email, phone_number, role, password, provider)
+      VALUES (${user_id}, ${email || null}, ${phone_number || null}, 'Client', ${hashedPassword}, ${provider})`;
+
     res.status(201).json({ message: 'User created successfully' });
-  
+
   } catch (error) {
     console.error("Register Error:", error);
     res.status(500).json({ message: 'Server error' });
   }
-  
 };
 
 exports.login = async (req, res) => {

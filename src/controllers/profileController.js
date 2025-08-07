@@ -1,14 +1,13 @@
-const {db} = require('../config/db');
+const { db } = require('../config/db');
 
 exports.getUser = async (req, res) => {
     const userId = req.user.user_id;
 
     try {
         const results = await db`
-        SELECT user_id, email, phone_number, name, profile_photo, role, preferences 
+        SELECT user_id, email, phone_number, name, profile_photo, role, preferences, provider
         FROM users 
-        WHERE user_id = ${userId}
-      `;
+        WHERE user_id = ${userId}`;
 
         if (results.length === 0) {
             return res.status(404).json({ error: 'User not found' });

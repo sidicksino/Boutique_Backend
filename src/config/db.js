@@ -15,7 +15,8 @@ async function initDB() {
       profile_photo VARCHAR(255),
       role VARCHAR(10) DEFAULT 'Client',
       password VARCHAR(255) NOT NULL,
-      preferences JSON DEFAULT NULL
+      preferences JSON DEFAULT NULL,
+      provider VARCHAR(20)
     )`;
 
     await db`CREATE TABLE IF NOT EXISTS categories (
