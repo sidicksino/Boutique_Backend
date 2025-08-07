@@ -21,7 +21,7 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 
 // pour servir les fichiers statiques
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Simple route
 app.get('/dashboard', (req, res) => {
