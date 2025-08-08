@@ -44,7 +44,16 @@ async function initDB() {
       product_id INT REFERENCES products(product_id) ON DELETE CASCADE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(user_id, product_id)
-    )`;    
+    )`;  
+    
+    // TABLE password_resets
+    await db`CREATE TABLE IF NOT EXISTS password_resets (
+      id SERIAL PRIMARY KEY,
+      user_id CHAR(36) REFERENCES users(user_id) ON DELETE CASCADE,
+      code VARCHAR(10) NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`; 
 
     console.log(" Database initialized successfully");
   } catch (error) {
