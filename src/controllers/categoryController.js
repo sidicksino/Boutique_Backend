@@ -5,7 +5,7 @@ const cloudinary = require('../config/cloudinary');
 exports.getCategories = async (req, res) => {
   try {
     const categories = await db`SELECT * FROM categories`;
-    res.json({ success: true, data: categories });
+    res.json(categories);
   } catch (err) {
     console.error("Error fetching categories:", err);
     res.status(500).json({ error: 'Server error' });
