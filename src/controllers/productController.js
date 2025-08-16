@@ -11,6 +11,39 @@ exports.getProducts = async (req, res) => {
     }
 };
 
+// GET all products with category name + total count + count by category
+exports.getAllProductsWithCategoryName = async (req, res) => {
+    try {
+        // Récupérer tous les produits avec le nom de la catégorie
+        const products = await db`
+            SELECT p.*, c.name as category_name
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.id
+        `;
+
+        // Nombre total de produits
+        const totalProducts = await db`SELECT COUNT(*) FROM products`;
+
+        // Nombre de produits par catégorie
+        const productsByCategory = await db`
+            SELECT c.name as category_name, COUNT(p.id) as total
+            FROM categories c
+            LEFT JOIN products p ON p.category_id = c.id
+            GROUP BY c.name
+        `;
+
+        res.json({
+            total: totalProducts[0].count,  // total général
+            byCategory: productsByCategory, // total par catégorie
+            products: products              // liste avec noms de catégorie
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+
 //  GET product by ID
 exports.getProductById = async (req, res) => {
     const { id } = req.params;
@@ -107,4 +140,3 @@ exports.deleteProduct = async (req, res) => {
       res.status(500).json({ error: "Server error" });
     }
   };
-  
