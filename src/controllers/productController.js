@@ -84,7 +84,7 @@ exports.createProduct = async (req, res) => {
     }
 
     // Nettoyer et convertir le prix
-    let productPrice = price.toString().replace(/[\s,]/g, "");
+    const productPrice = price.toString().replace(/[\s,]/g, "");
     productPrice = parseInt(productPrice, 10);
 
     if (isNaN(productPrice)) {

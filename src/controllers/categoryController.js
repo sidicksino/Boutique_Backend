@@ -5,7 +5,14 @@ const cloudinary = require('../config/cloudinary');
 exports.getCategories = async (req, res) => {
   try {
     const categories = await db`SELECT * FROM categories`;
-    res.json(categories);
+    const totalCategories = await db`
+      SELECT COUNT(*)::int AS total FROM categories
+    `;
+
+    res.json({
+      categories,
+      total: totalCategories[0].total
+    });
   } catch (err) {
     console.error("Error fetching categories:", err);
     res.status(500).json({ error: 'Server error' });
