@@ -112,8 +112,6 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-
-
 // PUT update product
 exports.updateProduct = async (req, res) => {
   const { id } = req.params;
@@ -133,20 +131,28 @@ exports.updateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   const { id } = req.params;
   try {
-    // Récupérer le produit
+    // Vérifier si le produit existe
     const product = await db`SELECT * FROM products WHERE id = ${id}`;
-
     if (product.length === 0) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    // Supprimer l'image de Cloudinary si elle existe
+    // Supprimer l'image Cloudinary si elle existe
     if (product[0].image_url) {
-      const publicId = product[0].image_url.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(publicId);
+      try {
+        const parts = product[0].image_url.split("/upload/");
+        if (parts.length > 1) {
+          const publicIdWithExtension = parts[1]; // ex: v1723803091/shop/product_abc123.jpg
+          const publicId = publicIdWithExtension.split(".")[0]; // enlève l’extension
+          const result = await cloudinary.uploader.destroy(publicId);
+          console.log("Cloudinary delete result:", result);
+        }
+      } catch (err) {
+        console.error("Cloudinary delete error:", err.message);
+      }
     }
 
-    // Supprimer le produit de la DB
+    // Supprimer le produit dans la DB
     await db`DELETE FROM products WHERE id = ${id}`;
 
     res.json({ success: true, message: "Product deleted" });
@@ -156,3 +162,4 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
