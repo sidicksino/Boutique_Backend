@@ -16,19 +16,27 @@ exports.getAllProductsWithCategoryName = async (req, res) => {
     try {
         // Récupérer tous les produits avec le nom de la catégorie
         const products = await db`
-            SELECT p.*, c.name as category_name
-            FROM products p
-            LEFT JOIN categories c ON p.category_id = c.id
-        `;
+        SELECT 
+          p.product_id,
+          p.name,
+          p.price,
+          p.description,
+          p.image_url,
+          c.category_id,
+          c.name AS category_name
+        FROM products p
+        JOIN categories c 
+          ON p.category_id = c.category_id
+      `;
 
         // Nombre total de produits
         const totalProducts = await db`SELECT COUNT(*) FROM products`;
 
         // Nombre de produits par catégorie
         const productsByCategory = await db`
-            SELECT c.name as category_name, COUNT(p.id) as total
+            SELECT c.name as category_name, COUNT(p.product_id) as total
             FROM categories c
-            LEFT JOIN products p ON p.category_id = c.id
+            LEFT JOIN products p ON p.category_id = c.category_id
             GROUP BY c.name
         `;
 
