@@ -132,34 +132,29 @@ exports.deleteProduct = async (req, res) => {
   const { id } = req.params;
   try {
     // Vérifier si le produit existe
-    const product = await db`SELECT * FROM products WHERE id = ${id}`;
+    const product = await db`SELECT * FROM products WHERE product_id = ${id}`;
     if (product.length === 0) {
       return res.status(404).json({ error: "Product not found" });
     }
 
     // Supprimer l'image Cloudinary si elle existe
-    if (product[0].image_url) {
+    if (product[0].image_url && product[0].image_url.includes("cloudinary")) {
       try {
-        const parts = product[0].image_url.split("/upload/");
-        if (parts.length > 1) {
-          const publicIdWithExtension = parts[1]; // ex: v1723803091/shop/product_abc123.jpg
-          const publicId = publicIdWithExtension.split(".")[0]; // enlève l’extension
-          const result = await cloudinary.uploader.destroy(publicId);
-          console.log("Cloudinary delete result:", result);
-        }
-      } catch (err) {
-        console.error("Cloudinary delete error:", err.message);
+        const publicId = product[0].image_url.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+      } catch (deleteError) {
+        console.log("Error deleting image from cloudinary", deleteError);
       }
     }
 
     // Supprimer le produit dans la DB
-    await db`DELETE FROM products WHERE id = ${id}`;
+    await db`DELETE FROM products WHERE product_id = ${id}`;
 
     res.json({ success: true, message: "Product deleted" });
-
   } catch (err) {
     console.error("Error deleting product:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
