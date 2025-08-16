@@ -112,7 +112,7 @@ exports.getProductsByCategoryId = async (req, res) => {
     if (result.length === 0) {
       return res.status(404).json({ error: "No products found for this category" });
     }
-    res.json({ success: true, data: result });
+    res.json(result);
   } catch (error) {
     console.error("Error getProductsByCategoryId:", error);
     res.status(500).json({ error: "Server error retrieving products" });
