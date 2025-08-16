@@ -13,42 +13,48 @@ exports.getProducts = async (req, res) => {
 
 // GET all products with category name + total count + count by category
 exports.getAllProductsWithCategoryName = async (req, res) => {
-    try {
-        // Récupérer tous les produits avec le nom de la catégorie
-        const products = await db`
-        SELECT 
-          p.product_id,
-          p.name,
-          p.price,
-          p.description,
-          p.image_url,
-          c.category_id,
-          c.name AS category_name
-        FROM products p
-        JOIN categories c 
-          ON p.category_id = c.category_id
-      `;
+  try {
+    // 1. Liste des produits avec nom de catégorie
+    const products = await db`
+      SELECT 
+        p.product_id,
+        p.name,
+        p.price,
+        p.description,
+        p.image_url,
+        c.category_id,
+        c.name AS category_name
+      FROM products p
+      JOIN categories c 
+        ON p.category_id = c.category_id
+    `;
 
-        // Nombre total de produits
-        const totalProducts = await db`SELECT COUNT(*) FROM products`;
+    // 2. Total produits
+    const totalProducts = await db`
+      SELECT COUNT(*)::int AS total FROM products
+    `;
 
-        // Nombre de produits par catégorie
-        const productsByCategory = await db`
-            SELECT c.name as category_name, COUNT(p.product_id) as total
-            FROM categories c
-            LEFT JOIN products p ON p.category_id = c.category_id
-            GROUP BY c.name
-        `;
+    // 3. Total par catégorie (inclut les catégories vides)
+    const productsByCategory = await db`
+      SELECT 
+        c.name as category_name, 
+        COUNT(p.product_id)::int as total
+      FROM categories c
+      LEFT JOIN products p ON p.category_id = c.category_id
+      GROUP BY c.name
+      ORDER BY c.name;
+    `;
 
-        res.json({
-            total: totalProducts[0].count,  // total général
-            byCategory: productsByCategory, // total par catégorie
-            products: products              // liste avec noms de catégorie
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Server error' });
-    }
+    // 4. Réponse JSON
+    res.json({
+      total: totalProducts[0].total,
+      byCategory: productsByCategory,
+      products
+    });
+  } catch (err) {
+    console.error("Error fetching products with categories:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 };
 
 
