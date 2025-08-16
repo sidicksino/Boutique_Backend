@@ -1,4 +1,5 @@
 const { db } = require('../config/db');
+const cloudinary = require('../config/cloudinary');
 
 //  GET all products
 exports.getProducts = async (req, res) => {
@@ -18,34 +19,50 @@ exports.getProductById = async (req, res) => {
     res.json(product[0]);
 };
 
-//  POST new product
 exports.createProduct = async (req, res) => {
     try {
         const {
             name,
             description,
             price,
-            discount_percentage,
+            discount_percentage = 0,
             image_url,
-            in_stock,
-            is_favorite,
+            in_stock = true,
+            is_favorite = false,
             category_id
         } = req.body;
 
+        if (!name || !description || !price || !image_url || !category_id) {
+            return res.status(400).json({ error: "Name, price, image URL, and category ID are required" });
+        }
+
+        // Convert price to float
+        const productPrice = parseFloat(price);
+        if (isNaN(productPrice)) {
+            return res.status(400).json({ error: "Price must be a number" });
+        }
+
+        // Upload image to Cloudinary
+        const uploadResponse = await cloudinary.uploader.upload(image_url);
+        const uploadedImageUrl = uploadResponse.secure_url;
+
+        // Insert product
         const result = await db`
-        INSERT INTO products 
+        INSERT INTO products
           (name, description, price, discount_percentage, image_url, in_stock, is_favorite, category_id)
-        VALUES 
-          (${name}, ${description}, ${price}, ${discount_percentage}, ${image_url}, ${in_stock}, ${is_favorite}, ${category_id})
+        VALUES
+          (${name}, ${description}, ${productPrice}, ${discount_percentage}, ${uploadedImageUrl}, ${in_stock}, ${is_favorite}, ${category_id})
         RETURNING *;
       `;
 
         res.status(201).json(result[0]);
+
     } catch (err) {
         console.error("Error creating product:", err);
         res.status(500).json({ error: "Server error" });
     }
 };
+
 
 
 // PUT update product
@@ -64,9 +81,30 @@ exports.updateProduct = async (req, res) => {
     res.json(result[0]);
 };
 
-// DELETE product
 exports.deleteProduct = async (req, res) => {
     const { id } = req.params;
-    await db`DELETE FROM products WHERE id = ${id}`;
-    res.json({ message: "Product deleted" });
-};
+    try {
+      // Récupérer le produit
+      const product = await db`SELECT * FROM products WHERE id = ${id}`;
+  
+      if (product.length === 0) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+  
+      // Supprimer l'image de Cloudinary si elle existe
+      if (product[0].image_url) {
+        const publicId = product[0].image_url.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
+  
+      // Supprimer le produit de la DB
+      await db`DELETE FROM products WHERE id = ${id}`;
+  
+      res.json({ success: true, message: "Product deleted" });
+  
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  };
+  
