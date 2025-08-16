@@ -89,11 +89,10 @@ exports.deleteCategory = async (req, res) => {
       return res.status(404).json({ error: "Category not found" });
     }
 
-    // OPTIONAL: Delete Cloudinary image
-    // if (category[0].image_url) {
-    //   const publicId = category[0].image_url.split('/').pop().split('.')[0];
-    //   await cloudinary.uploader.destroy(publicId);
-    // }
+    if (category[0].image_url) {
+      const publicId = category[0].image_url.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(publicId);
+    }
 
     await db`DELETE FROM categories WHERE id = ${id}`;
     res.json({ success: true, message: "Category deleted" });
