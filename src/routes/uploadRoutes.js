@@ -1,25 +1,19 @@
-const express = require('express');
-const cloudinary = require('../config/cloudinary');
-const { db } = require('../config/db');
-const router = express.Router();
-const authenticateToken = require('../middleware/auth');
-
 router.post('/upload', authenticateToken, async (req, res) => {
   try {
+    console.log("Body received length:", req.body?.profile_photo?.length);
+
     const userId = req.user.user_id;
     const { profile_photo } = req.body;
     if (!profile_photo) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // upload sur Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(profile_photo, {
       folder: "profile_photos",
     });
 
     const imageUrl = uploadResponse.secure_url;
 
-    // update en DB
     await db`
       UPDATE users 
       SET profile_photo = ${imageUrl}
@@ -32,5 +26,3 @@ router.post('/upload', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Upload failed' });
   }
 });
-
-module.exports = router;
