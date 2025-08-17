@@ -1,27 +1,36 @@
-// routes/uploadRoutes.js
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
+const cloudinary = require('../config/cloudinary');
+const { db } = require('../config/db');
 const router = express.Router();
+const authenticateToken = require('../middleware/auth');
 
-// Destination & nom du fichier
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) =>
-    cb(null, Date.now() + path.extname(file.originalname)),
-});
+router.post('/upload', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { profile_photo } = req.body;
+    if (!profile_photo) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
 
-const upload = multer({ storage });
+    // upload sur Cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(profile_photo, {
+      folder: "profile_photos",
+    });
 
-// Route pour upload image
-router.post('/upload', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
+    const imageUrl = uploadResponse.secure_url;
+
+    // update en DB
+    await db`
+      UPDATE users 
+      SET profile_photo = ${imageUrl}
+      WHERE user_id = ${userId}
+    `;
+
+    res.status(200).json({ url: imageUrl });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: 'Upload failed' });
   }
-
-  const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-
-  res.status(200).json({ url: imageUrl });
 });
 
 module.exports = router;
