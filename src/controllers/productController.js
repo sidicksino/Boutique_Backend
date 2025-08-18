@@ -61,7 +61,7 @@ exports.getAllProductsWithCategoryName = async (req, res) => {
 //  GET product by ID
 exports.getProductById = async (req, res) => {
   const { id } = req.params;
-  const product = await db`SELECT * FROM products WHERE id = ${id}`;
+  const product = await db`SELECT * FROM products WHERE product_id = ${id}`;
   if (product.length === 0) return res.status(404).json({ error: "Product not found" });
   res.json(product[0]);
 };
