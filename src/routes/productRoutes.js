@@ -9,13 +9,14 @@ const {
   searchProducts,
   getAllProductsWithCategoryName,
 } = require("../controllers/productController");
+const authenticateToken = require('../middleware/auth');
 
-router.get("/products/search", searchProducts);
-router.get("/products", getProducts);
-router.get("/products/all", getAllProductsWithCategoryName);
-router.get("/products/:id", getProductById);
-router.post("/products", createProduct);
-router.put("/products/:id", updateProduct);
-router.delete("/products/:id", deleteProduct);
+router.get("/products/search", authenticateToken, searchProducts);
+router.get("/products", authenticateToken, getProducts);
+router.get("/products/all", authenticateToken, getAllProductsWithCategoryName);
+router.get("/products/:id", authenticateToken, getProductById);
+router.post("/products", authenticateToken, createProduct);
+router.put("/products/:id", authenticateToken, updateProduct);
+router.delete("/products/:id",authenticateToken, deleteProduct);
 
 module.exports = router;
