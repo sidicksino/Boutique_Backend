@@ -163,7 +163,7 @@ exports.searchProducts = async (req, res) => {
   const { q } = req.query;
   
   if (!q) {
-    return res.status(400).json({ error: 'Query parameter "q" is required' });
+    return res.status(400).json([]);
   }
 
   try {
