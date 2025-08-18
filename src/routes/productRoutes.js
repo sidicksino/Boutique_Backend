@@ -10,13 +10,12 @@ const {
   getAllProductsWithCategoryName,
 } = require("../controllers/productController");
 
+router.get("/products/search", searchProducts);
 router.get("/products", getProducts);
 router.get("/products/all", getAllProductsWithCategoryName);
 router.get("/products/:id", getProductById);
 router.post("/products", createProduct);
 router.put("/products/:id", updateProduct);
 router.delete("/products/:id", deleteProduct);
-
-router.get("/products/search", searchProducts);
 
 module.exports = router;

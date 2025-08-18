@@ -158,23 +158,27 @@ exports.deleteProduct = async (req, res) => {
 };
 
 
-// Ajoutez cette route dans votre backend
+// src/controllers/productController.js
 exports.searchProducts = async (req, res) => {
   const { q } = req.query;
-  
-  if (!q) {
-    return res.status(400).json([]);
+
+  if (!q || q.trim() === "") {
+    return res.status(200).json([]); // retourne un tableau vide si aucune recherche
   }
 
   try {
+    // Neon/Postgres supporte le tag SQL avec interpolation sécurisée
     const products = await db`
-      SELECT * 
-      FROM products 
-      WHERE name ILIKE ${'%' + q + '%'} 
+      SELECT *
+      FROM products
+      WHERE name ILIKE ${'%' + q + '%'}
          OR description ILIKE ${'%' + q + '%'}
+      ORDER BY created_at DESC
     `;
+
     res.json(products);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error("Search error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
