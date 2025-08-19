@@ -96,29 +96,32 @@ exports.updateEmailPhone = async (req, res) => {
       }
   
       const user = userResult[0];
-      const updates = [];
-      const updateData = {};
   
-      // 1. Mettre à jour email seulement si provider === 'phone'
+      // Préparer les mises à jour
+      let updatedEmail = undefined;
+      let updatedPhone = undefined;
+  
+      // Email
       if (email !== undefined && user.provider === 'phone') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email.trim() || !emailRegex.test(email.trim())) {
+        const cleanEmail = email.trim();
+        if (!cleanEmail || !emailRegex.test(cleanEmail)) {
           return res.status(400).json({ error: 'Please provide a valid email' });
         }
   
-        // Vérifier si email déjà utilisé
+        // Vérifier doublon
         const existing = await db`
-          SELECT user_id FROM users WHERE email = ${email.trim()} AND user_id != ${userId}
+          SELECT user_id FROM users 
+          WHERE email = ${cleanEmail} AND user_id != ${userId}
         `;
         if (existing.length > 0) {
           return res.status(409).json({ error: 'Email already in use' });
         }
   
-        updateData.email = email.trim();
-        updates.push(db`email = ${updateData.email}`);
+        updatedEmail = cleanEmail;
       }
   
-      // 2. Mettre à jour phone_number seulement si provider === 'email'
+      // Phone
       if (phone_number !== undefined && user.provider === 'email') {
         const cleanPhone = phone_number.replace(/\s/g, '');
         const phoneRegex = /^[0-9]{8,15}$/;
@@ -126,20 +129,20 @@ exports.updateEmailPhone = async (req, res) => {
           return res.status(400).json({ error: 'Phone must be 8–15 digits' });
         }
   
-        // Vérifier si numéro déjà utilisé
+        // Vérifier doublon
         const existing = await db`
-          SELECT user_id FROM users WHERE phone_number = ${cleanPhone} AND user_id != ${userId}
+          SELECT user_id FROM users 
+          WHERE phone_number = ${cleanPhone} AND user_id != ${userId}
         `;
         if (existing.length > 0) {
           return res.status(409).json({ error: 'Phone number already in use' });
         }
   
-        updateData.phone_number = cleanPhone;
-        updates.push(db`phone_number = ${updateData.phone_number}`);
+        updatedPhone = cleanPhone;
       }
   
-      // Aucune mise à jour autorisée
-      if (updates.length === 0) {
+      // Aucune mise à jour
+      if (!updatedEmail && !updatedPhone) {
         return res.status(400).json({
           error: user.provider === 'email'
             ? 'You cannot update your email'
@@ -147,16 +150,29 @@ exports.updateEmailPhone = async (req, res) => {
         });
       }
   
-      // Appliquer la mise à jour
-      const result = await db`
-        UPDATE users
-        SET ${db(updates, ' , ')}
-        WHERE user_id = ${userId}
-        RETURNING email, phone_number
-      `;
-  
-      if (result.length === 0) {
-        return res.status(500).json({ error: 'Update failed' });
+      // Construire UPDATE dynamiquement
+      let result;
+      if (updatedEmail && updatedPhone) {
+        result = await db`
+          UPDATE users
+          SET email = ${updatedEmail}, phone_number = ${updatedPhone}
+          WHERE user_id = ${userId}
+          RETURNING email, phone_number
+        `;
+      } else if (updatedEmail) {
+        result = await db`
+          UPDATE users
+          SET email = ${updatedEmail}
+          WHERE user_id = ${userId}
+          RETURNING email, phone_number
+        `;
+      } else if (updatedPhone) {
+        result = await db`
+          UPDATE users
+          SET phone_number = ${updatedPhone}
+          WHERE user_id = ${userId}
+          RETURNING email, phone_number
+        `;
       }
   
       return res.json({
@@ -167,4 +183,5 @@ exports.updateEmailPhone = async (req, res) => {
       console.error('Error updating contact:', err);
       return res.status(500).json({ error: 'Server error' });
     }
-};
+  };
+  
