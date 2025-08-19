@@ -106,7 +106,7 @@ exports.changePassword = async (req, res) => {
 
   try {
     // Récupérer le mot de passe actuel
-    const [rows] = await db`SELECT password FROM users WHERE user_id = ${userId}`;
+    const rows = await db`SELECT password FROM users WHERE user_id = ${userId}`;
 
     if (rows.length === 0) {
       return res.status(404).json({ message: 'User not found' });
