@@ -79,109 +79,93 @@ exports.updateName = async (req, res) => {
 
 
 
+// PUT /api/me/updateEmailPhone
 exports.updateEmailPhone = async (req, res) => {
     const userId = req.user.user_id;
     const { email, phone_number } = req.body;
-  
+
     try {
-      // Récupérer l'utilisateur
-      const userResult = await db`
+        // Récupérer l'utilisateur
+        const userResult = await db`
         SELECT provider, email, phone_number 
         FROM users 
         WHERE user_id = ${userId}
       `;
-  
-      if (userResult.length === 0) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-  
-      const user = userResult[0];
-  
-      // Préparer les mises à jour
-      let updatedEmail = undefined;
-      let updatedPhone = undefined;
-  
-      // Email
-      if (email !== undefined && user.provider === 'phone') {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const cleanEmail = email.trim();
-        if (!cleanEmail || !emailRegex.test(cleanEmail)) {
-          return res.status(400).json({ error: 'Please provide a valid email' });
+
+        if (userResult.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
         }
-  
-        // Vérifier doublon
-        const existing = await db`
-          SELECT user_id FROM users 
-          WHERE email = ${cleanEmail} AND user_id != ${userId}
+
+        const user = userResult[0];
+        const updates = [];
+
+        // Mise à jour de l'email (si provider === 'phone')
+        if (email !== undefined && user.provider === 'phone') {
+            const cleanEmail = email.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+                return res.status(400).json({ error: 'Please provide a valid email' });
+            }
+
+            // Vérifier si email déjà pris
+            const existingEmail = await db`
+          SELECT 1 FROM users WHERE email = ${cleanEmail} AND user_id != ${userId} LIMIT 1
         `;
-        if (existing.length > 0) {
-          return res.status(409).json({ error: 'Email already in use' });
+            if (existingEmail.length > 0) {
+                return res.status(409).json({ error: 'Email already in use' });
+            }
+
+            updates.push(db`email = ${cleanEmail}`);
         }
-  
-        updatedEmail = cleanEmail;
-      }
-  
-      // Phone
-      if (phone_number !== undefined && user.provider === 'email') {
-        const cleanPhone = phone_number.replace(/\s/g, '');
-        const phoneRegex = /^[0-9]{8,15}$/;
-        if (!phoneRegex.test(cleanPhone)) {
-          return res.status(400).json({ error: 'Phone must be 8–15 digits' });
-        }
-  
-        // Vérifier doublon
-        const existing = await db`
-          SELECT user_id FROM users 
-          WHERE phone_number = ${cleanPhone} AND user_id != ${userId}
+
+        // Mise à jour du téléphone (si provider === 'email')
+        if (phone_number !== undefined && user.provider === 'email') {
+            const cleanPhone = phone_number.replace(/\s/g, '');
+            const phoneRegex = /^[0-9]{8,15}$/;
+
+            if (!phoneRegex.test(cleanPhone)) {
+                return res.status(400).json({ error: 'Phone must be 8–15 digits' });
+            }
+
+            // Vérifier si téléphone déjà pris
+            const existingPhone = await db`
+          SELECT 1 FROM users WHERE phone_number = ${cleanPhone} AND user_id != ${userId} LIMIT 1
         `;
-        if (existing.length > 0) {
-          return res.status(409).json({ error: 'Phone number already in use' });
+            if (existingPhone.length > 0) {
+                return res.status(409).json({ error: 'Phone number already in use' });
+            }
+
+            updates.push(db`phone_number = ${cleanPhone}`);
         }
-  
-        updatedPhone = cleanPhone;
-      }
-  
-      // Aucune mise à jour
-      if (!updatedEmail && !updatedPhone) {
-        return res.status(400).json({
-          error: user.provider === 'email'
-            ? 'You cannot update your email'
-            : 'You cannot update your phone number',
+
+        // Aucune mise à jour autorisée
+        if (updates.length === 0) {
+            return res.status(400).json({
+                error: user.provider === 'email'
+                    ? 'You cannot update your email'
+                    : 'You cannot update your phone number',
+            });
+        }
+
+        // Appliquer les mises à jour
+        const result = await db`
+        UPDATE users
+        SET ${db(updates, ', ')}
+        WHERE user_id = ${userId}
+        RETURNING email, phone_number
+      `;
+
+        if (result.length === 0) {
+            return res.status(500).json({ error: 'Update failed' });
+        }
+
+        res.json({
+            message: 'Contact info updated successfully',
+            user: result[0],
         });
-      }
-  
-      // Construire UPDATE dynamiquement
-      let result;
-      if (updatedEmail && updatedPhone) {
-        result = await db`
-          UPDATE users
-          SET email = ${updatedEmail}, phone_number = ${updatedPhone}
-          WHERE user_id = ${userId}
-          RETURNING email, phone_number
-        `;
-      } else if (updatedEmail) {
-        result = await db`
-          UPDATE users
-          SET email = ${updatedEmail}
-          WHERE user_id = ${userId}
-          RETURNING email, phone_number
-        `;
-      } else if (updatedPhone) {
-        result = await db`
-          UPDATE users
-          SET phone_number = ${updatedPhone}
-          WHERE user_id = ${userId}
-          RETURNING email, phone_number
-        `;
-      }
-  
-      return res.json({
-        message: 'Contact info updated successfully',
-        user: result[0],
-      });
     } catch (err) {
-      console.error('Error updating contact:', err);
-      return res.status(500).json({ error: 'Server error' });
+        console.error('Error updating contact:', err);
+        res.status(500).json({ error: 'Server error' });
     }
-  };
-  
+};
