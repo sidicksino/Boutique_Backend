@@ -99,6 +99,11 @@ exports.changePassword = async (req, res) => {
     return res.status(400).json({ message: 'New password and confirmation do not match' });
   }
 
+  // Après la vérification de la confirmation
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+  }
+
   try {
     // Récupérer le mot de passe actuel
     const [rows] = await db`SELECT password FROM users WHERE user_id = ${userId}`;
@@ -120,7 +125,10 @@ exports.changePassword = async (req, res) => {
 
     res.status(200).json({ message: 'Password changed successfully' });
   } catch (error) {
-    console.error('Change Password Error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Change Password Error Details:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message
+    });
   }
 };
