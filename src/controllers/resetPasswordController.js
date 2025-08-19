@@ -86,3 +86,41 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+exports.changePassword = async (req, res) => {
+  const userId = req.user.user_id;
+  const { password, newPassword, confirmNewpassword } = req.body;
+
+  if (!password || !newPassword || !confirmNewpassword) {
+    return res.status(400).json({ message: 'Please fill all fields' });
+  }
+
+  if (newPassword !== confirmNewpassword) {
+    return res.status(400).json({ message: 'New password and confirmation do not match' });
+  }
+
+  try {
+    // Récupérer le mot de passe actuel
+    const [rows] = await db`SELECT password FROM users WHERE user_id = ${userId}`;
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, rows[0].password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect current password' });
+    }
+
+    // Hasher le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Mettre à jour le mot de passe
+    await db`UPDATE users SET password = ${hashedPassword} WHERE user_id = ${userId}`;
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change Password Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
