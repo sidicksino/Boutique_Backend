@@ -99,7 +99,7 @@ exports.updateEmailPhone = async (req, res) => {
         const user = userResult[0];
         const updates = [];
 
-        // Mise à jour de l'email (si provider === 'phone')
+        // Email
         if (email !== undefined && user.provider === 'phone') {
             const cleanEmail = email.trim();
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -108,7 +108,6 @@ exports.updateEmailPhone = async (req, res) => {
                 return res.status(400).json({ error: 'Please provide a valid email' });
             }
 
-            // Vérifier si email déjà pris
             const existingEmail = await db`
           SELECT 1 FROM users WHERE email = ${cleanEmail} AND user_id != ${userId} LIMIT 1
         `;
@@ -119,7 +118,7 @@ exports.updateEmailPhone = async (req, res) => {
             updates.push(db`email = ${cleanEmail}`);
         }
 
-        // Mise à jour du téléphone (si provider === 'email')
+        // Phone
         if (phone_number !== undefined && user.provider === 'email') {
             const cleanPhone = phone_number.replace(/\s/g, '');
             const phoneRegex = /^[0-9]{8,15}$/;
@@ -128,7 +127,6 @@ exports.updateEmailPhone = async (req, res) => {
                 return res.status(400).json({ error: 'Phone must be 8–15 digits' });
             }
 
-            // Vérifier si téléphone déjà pris
             const existingPhone = await db`
           SELECT 1 FROM users WHERE phone_number = ${cleanPhone} AND user_id != ${userId} LIMIT 1
         `;
@@ -139,7 +137,6 @@ exports.updateEmailPhone = async (req, res) => {
             updates.push(db`phone_number = ${cleanPhone}`);
         }
 
-        // Aucune mise à jour autorisée
         if (updates.length === 0) {
             return res.status(400).json({
                 error: user.provider === 'email'
@@ -148,10 +145,15 @@ exports.updateEmailPhone = async (req, res) => {
             });
         }
 
-        // Appliquer les mises à jour
+        // ✅ Construire la clause SET correctement
+        const setClause = updates.reduce((acc, curr, i) =>
+            i === 0 ? curr : db`${acc}, ${curr}`
+        );
+
+        // Appliquer l'update
         const result = await db`
         UPDATE users
-        SET ${db(updates, ', ')}
+        SET ${setClause}
         WHERE user_id = ${userId}
         RETURNING email, phone_number
       `;
@@ -169,3 +171,4 @@ exports.updateEmailPhone = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
+
