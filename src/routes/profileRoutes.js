@@ -73,4 +73,12 @@ router.get('/getUser',authenticateToken, profileController.getUser);
  */
 router.put('/updateProfile',authenticateToken, profileController.updateProfile);
 
+router.put('/updateName',authenticateToken, profileController.updateName);
+
+
+// PUT /api/me/updateContact
+router.put('/updateContact', authenticateToken, profileController.updateEmailPhone );
+
+module.exports = router;
+
 module.exports = router;
