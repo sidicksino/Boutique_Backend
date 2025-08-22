@@ -55,6 +55,28 @@ async function initDB() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`; 
 
+
+
+    // NOUVELLE TABLE : CHAT ===
+    await db`
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id SERIAL PRIMARY KEY,
+        user_id CHAR(36) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+        sender_type VARCHAR(10) NOT NULL CHECK (sender_type IN ('user', 'admin')),
+        message TEXT NOT NULL,
+        sent_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `;
+
+    // Index pour performance
+    await db`
+      CREATE INDEX IF NOT EXISTS idx_chat_user_id ON chat_messages(user_id)
+    `;
+
+    await db`
+      CREATE INDEX IF NOT EXISTS idx_chat_sent_at ON chat_messages(sent_at)
+    `;
+
     console.log(" Database initialized successfully");
   } catch (error) {
     console.error(" Error initializing DB:", error);
