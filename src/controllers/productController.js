@@ -83,31 +83,49 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ error: "Name, price, image URL, and category ID are required" });
     }
 
-    // Nettoyer et convertir le prix
-    const productPrice = price.toString().replace(/[\s,]/g, "");
-    productPrice = parseInt(productPrice, 10);
-
-    if (isNaN(productPrice)) {
-      return res.status(400).json({ error: "Price must be a valid number" });
+    const cleanPrice = price.toString().replace(/[\s,]/g, "");
+    const productPrice = parseInt(cleanPrice, 10);
+    if (isNaN(productPrice) || productPrice <= 0) {
+      return res.status(400).json({ error: "Price must be a valid positive number" });
     }
 
-    // Upload image to Cloudinary
+    if (discount_percentage < 0 || discount_percentage > 100) {
+      return res.status(400).json({ error: "Discount percentage must be between 0 and 100" });
+    }
+
+    // Validate image format
+    if (!image_url.startsWith("data:image")) {
+      return res.status(400).json({ error: "Image must be a valid data URL" });
+    }
+
+    // Validate category exists
+    const categoryCheck = await db`SELECT 1 FROM categories WHERE category_id = ${category_id}`;
+    if (categoryCheck.length === 0) {
+      return res.status(400).json({ error: "Invalid category_id" });
+    }
+
+    // Upload to Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(image_url);
     const uploadedImageUrl = uploadResponse.secure_url;
 
     // Insert product
     const result = await db`
-        INSERT INTO products
-          (name, description, price, discount_percentage, image_url, in_stock, is_favorite, category_id)
-        VALUES
-          (${name}, ${description}, ${productPrice}, ${discount_percentage}, ${uploadedImageUrl}, ${in_stock}, ${is_favorite}, ${category_id})
-        RETURNING *;
-      `;
+      INSERT INTO products
+        (name, description, price, discount_percentage, image_url, in_stock, is_favorite, category_id)
+      VALUES
+        (${name}, ${description}, ${productPrice}, ${discount_percentage}, ${uploadedImageUrl}, ${in_stock}, ${is_favorite}, ${category_id})
+      RETURNING *;
+    `;
 
     res.status(201).json(result[0]);
 
   } catch (err) {
-    console.error("Error creating product:", err);
+    console.error("Error creating product:", {
+      message: err.message,
+      stack: err.stack,
+      code: err.code,
+      detail: err.detail,
+    });
     res.status(500).json({ error: "Server error" });
   }
 };
